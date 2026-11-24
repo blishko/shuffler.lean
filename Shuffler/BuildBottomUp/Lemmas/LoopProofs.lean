@@ -253,7 +253,7 @@ decreasing_by
   · exact Prod.Lex.right _ hlt
 
 theorem buildBottomUp_spec (initial : State source target spills) (h : initial.Valid) :
-    Spec (((((buildBottomUp initial h) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
+    Spec (((((buildBottomUp initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
       if h : r.blocked.isSome then throw (.Blocked (r.blocked.get h)) else pure r.state) >>= fun state =>
       pure (⟨state.stack, state.trace⟩ : (stack : Stack) × Trace _ _ stack))) (fun result => result.1 = initial.expectedStack) := by
   rw [buildBottomUp_completed]

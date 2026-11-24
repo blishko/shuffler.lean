@@ -12,7 +12,7 @@ namespace Shuffler.Emission
 -- target slot holds its target value.
 theorem buildBottomUp_expected_of_ok (initial : State source target spills)
     (h : initial.Valid) {result : State source target spills}
-    (hrun : buildBottomUp initial h = .ok ⟨none, result⟩) :
+    (hrun : buildBottomUp initial = .ok ⟨none, result⟩) :
     result.stack = initial.expectedStack := by
   have hs := buildBottomUp_spec initial h
   simpa [completedTrace_of_ok hrun, Spec] using hs
@@ -22,7 +22,7 @@ theorem buildBottomUp_correct_of_ok (initial : State source target spills)
     (h : initial.Valid)
     (hmapped : ∀ i j, initial.mapping i = some j → initial.stack[i] = target[j])
     {result : State source target spills}
-    (hrun : buildBottomUp initial h = .ok ⟨none, result⟩) : result.stack = target :=
+    (hrun : buildBottomUp initial = .ok ⟨none, result⟩) : result.stack = target :=
   (buildBottomUp_expected_of_ok initial h hrun).trans (expectedStack_eq_target initial hmapped)
 
 end Shuffler.Emission

@@ -14,7 +14,7 @@ namespace Shuffler.Emission
 -- copy in DUP reach of the initial stack.
 theorem buildBottomUp_reachable_of_ok (initial : State source target spills)
     (h : initial.Valid) {result : State source target spills}
-    (hrun : buildBottomUp initial h = .ok ⟨none, result⟩) : initial.reachable := by
+    (hrun : buildBottomUp initial = .ok ⟨none, result⟩) : initial.reachable := by
   apply loop_success_requires_reachable 0 initial (State.invariant.initial h)
   apply (buildBottomUp_success_iff_loop initial h).mp
   exact ⟨_, completedTrace_of_ok hrun, trivial⟩
@@ -23,7 +23,7 @@ theorem buildBottomUp_reachable_of_ok (initial : State source target spills)
 -- each unbound target value can be generated, loaded, or DUPed.
 theorem buildBottomUp_succeeds_of_processed (initial : State source target spills)
     (h : initial.Valid) (hp : initial.processed cursor) (hr : initial.withinReach cursor) :
-    ∃ result : State source target spills, buildBottomUp initial h = .ok ⟨none, result⟩ := by
+    ∃ result : State source target spills, buildBottomUp initial = .ok ⟨none, result⟩ := by
   obtain ⟨value, heq, _⟩ := buildBottomUp_success_of_processed initial h hp hr
   obtain ⟨result, hrun, _⟩ := completedTrace_ok_inversion heq
   exact ⟨result, hrun⟩
@@ -34,7 +34,7 @@ theorem buildBottomUp_correct_of_processed (initial : State source target spills
     (h : initial.Valid) (hp : initial.processed cursor) (hr : initial.withinReach cursor)
     (hmapped : ∀ i j, initial.mapping i = some j → initial.stack[i] = target[j]) :
     ∃ result : State source target spills,
-      buildBottomUp initial h = .ok ⟨none, result⟩ ∧ result.stack = target := by
+      buildBottomUp initial = .ok ⟨none, result⟩ ∧ result.stack = target := by
   obtain ⟨result, hrun⟩ := buildBottomUp_succeeds_of_processed initial h hp hr
   exact ⟨result, hrun, buildBottomUp_correct_of_ok initial h hmapped hrun⟩
 
@@ -43,7 +43,7 @@ theorem buildBottomUp_correct_of_processed (initial : State source target spills
 theorem buildBottomUp_succeeds_iff_reachable_of_processed
     (initial : State source target spills) (h : initial.Valid)
     (hp : initial.processed cursor) (hw : initial.stack.length - cursor ≤ MAX_SWAP_DEPTH) :
-    (∃ result : State source target spills, buildBottomUp initial h = .ok ⟨none, result⟩) ↔
+    (∃ result : State source target spills, buildBottomUp initial = .ok ⟨none, result⟩) ↔
       initial.reachable := by
   constructor
   · rintro ⟨result, hrun⟩
@@ -58,7 +58,7 @@ theorem buildBottomUp_correct_iff_reachable_of_processed
     (hp : initial.processed cursor) (hw : initial.stack.length - cursor ≤ MAX_SWAP_DEPTH)
     (hmapped : ∀ i j, initial.mapping i = some j → initial.stack[i] = target[j]) :
     (∃ result : State source target spills,
-      buildBottomUp initial h = .ok ⟨none, result⟩ ∧ result.stack = target) ↔ initial.reachable := by
+      buildBottomUp initial = .ok ⟨none, result⟩ ∧ result.stack = target) ↔ initial.reachable := by
   constructor
   · rintro ⟨result, hrun, _⟩
     exact buildBottomUp_reachable_of_ok initial h hrun

@@ -265,7 +265,7 @@ decreasing_by
 
 -- The size check after the loop holds whenever the loop succeeds.
 theorem buildBottomUp_success_iff_loop (initial : State source target spills) (h : initial.Valid) :
-    Succeeds (((((buildBottomUp initial h) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
+    Succeeds (((((buildBottomUp initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
       if h : r.blocked.isSome then throw (.Blocked (r.blocked.get h)) else pure r.state) >>= fun state =>
       pure (⟨state.stack, state.trace⟩ : (stack : Stack) × Trace _ _ stack))) (fun _ => True) ↔
       Succeeds (((((buildBottomUp.loop 0 initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
@@ -292,7 +292,7 @@ theorem buildBottomUp_success_iff_loop (initial : State source target spills) (h
 
 theorem buildBottomUp_success (initial : State source target spills) (h : initial.Valid)
     (hsmall : initial.stack.length ≤ MAX_DUP_DEPTH + 1) :
-    Succeeds (((((buildBottomUp initial h) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
+    Succeeds (((((buildBottomUp initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
       if h : r.blocked.isSome then throw (.Blocked (r.blocked.get h)) else pure r.state) >>= fun state =>
       pure (⟨state.stack, state.trace⟩ : (stack : Stack) × Trace _ _ stack))) (fun _ => True) :=
   (buildBottomUp_success_iff_loop initial h).mpr
@@ -328,10 +328,10 @@ theorem loop_zero_eq_of_processed (state : State source target spills)
 
 theorem buildBottomUp_success_of_processed (initial : State source target spills)
     (h : initial.Valid) (hp : initial.processed cursor) (hr : initial.withinReach cursor) :
-    Succeeds (((((buildBottomUp initial h) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
+    Succeeds (((((buildBottomUp initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
       if h : r.blocked.isSome then throw (.Blocked (r.blocked.get h)) else pure r.state) >>= fun state =>
       pure (⟨state.stack, state.trace⟩ : (stack : Stack) × Trace _ _ stack))) (fun _ => True) := by
-  rw [buildBottomUp_success_iff_loop, loop_zero_eq_of_processed initial hp]
+  rw [buildBottomUp_success_iff_loop initial h, loop_zero_eq_of_processed initial hp]
   exact loop_success cursor initial ⟨h, hp⟩ hr
 
 end Shuffler.Emission

@@ -24,7 +24,7 @@ theorem loop_no_assertion (targetOffset : ℕ) (state : State source target spil
 -- From a valid initial state, buildBottomUp never fails with an assertion error.
 theorem buildBottomUp_no_assertion (initial : State source target spills)
     (h : initial.Valid) (reason : String) :
-    buildBottomUp initial h ≠ .error (.assertion reason) := by
+    buildBottomUp initial ≠ .error (.assertion reason) := by
   intro he
   apply (buildBottomUp_spec initial h).noAssertion reason
   rw [he]
@@ -33,7 +33,7 @@ theorem buildBottomUp_no_assertion (initial : State source target spills)
 -- From a valid initial state, each error is a blocked error: a needed slot is outside DUP or
 -- SWAP reach.
 theorem buildBottomUp_error_is_blocked (initial : State source target spills)
-    (h : initial.Valid) (he : buildBottomUp initial h = .error err) :
+    (h : initial.Valid) (he : buildBottomUp initial = .error err) :
     ∃ blocked, err = .Blocked blocked := by
   apply (buildBottomUp_spec initial h).error
   rw [he]

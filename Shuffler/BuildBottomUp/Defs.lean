@@ -153,7 +153,6 @@ private theorem generate_pending_generations (state next : State source target s
 -- See solidity/libyul/backends/evm/ssa/stack/Shuffler.cpp:486-636.
 def buildBottomUp
   (initial : State source target spills)
-  (_hvalid : initial.Valid)
     : Except ShuffleErr (Result source target spills) := do
   let result ← loop 0 initial
   if result.blocked.isSome then return result

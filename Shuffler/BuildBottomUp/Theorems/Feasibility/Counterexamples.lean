@@ -95,9 +95,9 @@ private def literalState : State literalSource literalTarget ∅ where
   mapping := by simpa [literalSource, literalTarget] using shiftedMapping 17 1
   pending_generations := 1
 
-private theorem literalState_valid : literalState.Valid := ⟨by decide, by decide, by decide, by decide⟩
+example : literalState.Valid := ⟨by decide, by decide, by decide, by decide⟩
 example : ∀ i j, literalState.mapping i = some j → literalState.stack[i] = literalTarget[j] := by decide
-#guard decide ((buildBottomUp literalState literalState_valid).map (fun result => result.blocked) =
+#guard decide ((buildBottomUp literalState).map (fun result => result.blocked) =
     .ok (some ⟨0, 1⟩))
 example : Reserve ∅ literalSource literalTarget {one} := by decide
 
@@ -119,9 +119,9 @@ private def seedState : State seedSource seedTarget ∅ where
   mapping := by simpa [seedSource, seedTarget] using seedBinding
   pending_generations := 1
 
-private theorem seedState_valid : seedState.Valid := ⟨by decide, by decide, by decide, by decide⟩
+example : seedState.Valid := ⟨by decide, by decide, by decide, by decide⟩
 example : ∀ i j, seedState.mapping i = some j → seedState.stack[i] = seedTarget[j] := by decide
-#guard decide ((buildBottomUp seedState seedState_valid).map (fun result => result.blocked) =
+#guard decide ((buildBottomUp seedState).map (fun result => result.blocked) =
     .ok (some ⟨0, 1⟩))
 example : Reserve ∅ seedSource seedTarget {a} := by decide
 
@@ -142,8 +142,8 @@ private def equalState : State equalSource equalSource ∅ where
   mapping := by simpa [equalSource] using equalBinding
   pending_generations := 0
 
-private theorem equalState_valid : equalState.Valid := ⟨by decide, by decide, by decide, by decide⟩
-#guard decide ((buildBottomUp equalState equalState_valid).map (fun result => result.blocked) =
+example : equalState.Valid := ⟨by decide, by decide, by decide, by decide⟩
+#guard decide ((buildBottomUp equalState).map (fun result => result.blocked) =
     .ok none)
 example : Reserve ∅ equalSource equalSource 0 := by decide
 
@@ -161,10 +161,10 @@ private def hiddenState : State hiddenSource hiddenTarget ∅ where
   mapping := by simpa [hiddenSource, hiddenTarget] using shiftedMapping 17 2
   pending_generations := 2
 
-private theorem hiddenState_valid : hiddenState.Valid := ⟨by decide, by decide, by decide, by decide⟩
+example : hiddenState.Valid := ⟨by decide, by decide, by decide, by decide⟩
 example : ∀ i j, hiddenState.mapping i = some j → hiddenState.stack[i] = hiddenTarget[j] := by decide
 example : Shuffler.Generate.Ready ∅ hiddenSource [zero, a] := by decide
-#guard decide ((buildBottomUp hiddenState hiddenState_valid).map (fun result => result.blocked) =
+#guard decide ((buildBottomUp hiddenState).map (fun result => result.blocked) =
     .ok (some ⟨1, 1⟩))
 example : Reserve ∅ hiddenSource hiddenTarget ({zero} + {a}) := by decide
 

@@ -52,7 +52,7 @@ end Success
 
 theorem buildBottomUp_static_success_iff (initial : State source target spills)
     (h : initial.Valid) :
-    Succeeds (((((buildBottomUp initial h) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
+    Succeeds (((((buildBottomUp initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
       if h : r.blocked.isSome then throw (.Blocked (r.blocked.get h)) else pure r.state) >>= fun state =>
       pure (⟨state.stack, state.trace⟩ : (stack : Stack) × Trace _ _ stack))) (fun _ => True) ↔ StaticSuccess initial := by
   by_cases hsmall : initial.stack.length ≤ MAX_DUP_DEPTH + 1
@@ -60,7 +60,7 @@ theorem buildBottomUp_static_success_iff (initial : State source target spills)
       ((staticSuccess_iff_reachable_of_small initial hsmall).mpr
         (State.withinReach.initial h hsmall).copies)
   · have hn : 16 < initial.stack.length := by unfold MAX_DUP_DEPTH at hsmall; omega
-    rw [buildBottomUp_success_iff_loop]
+    rw [buildBottomUp_success_iff_loop initial h]
     exact (Success.loop_success_iff_suffix initial h hn 0 initial (Nat.zero_le _)
       (Success.PrefixState.initial initial h)).trans
         (Success.staticSuccess_iff_suffix_of_large initial (by unfold MAX_DUP_DEPTH; omega)).symm

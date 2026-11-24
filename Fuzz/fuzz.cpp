@@ -456,7 +456,7 @@ std::string planCase(Input& _in)
 }
 
 /// A stack, target, mapping and spill set. For "surplus" and "emit" some slots have no destination. For
-/// "lowest" and "bottomup" every slot has one. The state is `Valid`, as buildBottomUp requires, for "emit" after
+/// "lowest" and "bottomup" every slot has one. The state is `Valid`, as the theorems about buildBottomUp assume, for "emit" after
 /// removeSurplus.
 std::string stateCase(Input& _in, std::string const& _kind)
 {

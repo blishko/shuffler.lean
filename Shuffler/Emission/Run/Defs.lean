@@ -29,14 +29,6 @@ def run (source target : Stack) (mapping : Mapping source.length target.length)
   if result.blocked.isSome then return result
   state := result.state
 
-  let ⟨hsize⟩ ← requires (state.stack.length + state.pending_generations = target.length)
-    "stack height and pending generations must match the target size"
-  let ⟨hpending⟩ ← requires (state.mapping.unmapped_target_slots = state.pending_generations)
-    "pending generations must count unmapped target slots"
-  let ⟨havailable⟩ ← requires (∀ i, state.isAvailable i) "target slot is unavailable"
-  let ⟨hlabels⟩ ← requires (∀ j : Fin target.length,
-    (target[j.val]'j.isLt).isFunctionReturnLabel → (state.mapping.symm j).isSome)
-    "function return label has no bound source"
-  buildBottomUp state ⟨hsize, hpending, havailable, hlabels⟩
+  buildBottomUp state
 
 end Shuffler.Emission

@@ -28,7 +28,6 @@ text, so that both implementations parse the same input and print the same outpu
                                                                Planner.run: success, sawWildcardCopy, spills, dropped,
                                                                and on success the emitted stack and the plan
           | "err"
-          | "invalid"                                          the buildBottomUp state is not `Valid`
   status := "ok" | "blocked " offset " " excess
   op     := "SWAP" n | "DUP" n | "POP" | "PUSH:" slot | "LOAD:" slot
 -/
@@ -129,15 +128,6 @@ def initial (stack target : Stack) (spills : SpillSet) (mapping : Mapping stack.
   mapping := mapping
   pending_generations := (List.finRange target.length).countP (mapping.symm · = none)
 
-instance (state : State source target spills) : Decidable state.Valid :=
-  decidable_of_iff
-    (state.stack.length + state.pending_generations = target.length ∧
-      state.mapping.unmapped_target_slots = state.pending_generations ∧
-      (∀ j, state.isAvailable j) ∧
-      ∀ j, target[j].isFunctionReturnLabel → (state.mapping.symm j).isSome)
-    ⟨fun ⟨hs, hp, ha, hl⟩ => ⟨hs, hp, ha, hl⟩,
-      fun h => ⟨h.size, h.pending, h.available, h.labels_bound⟩⟩
-
 def parseSpills (s : String) : Except String SpillSet := do
   return ((← (words s).mapM parseNat).map VarId.mk).toFinset
 
@@ -153,9 +143,6 @@ def runBuildMapping : List String → Except String String
         s!"ok {showBit r.sawWildcardCopy};{" ".intercalate sources}"
       | .error _ => "err"
   | _ => .error "not a buildMapping case"
-
-def runBuildBottomUp (state : State source target spills) : String :=
-  if h : state.Valid then showResult (buildBottomUp state h) else "invalid"
 
 def runOnState (run : ∀ {source target : Stack} {spills : SpillSet}, State source target spills → String) :
     List String → Except String String
@@ -212,7 +199,7 @@ def run (line : String) : Except String String :=
   | "surplus" :: fields => runOnState (showResult <| removeSurplus ·) fields
   | "lowest" :: fields =>
     runOnState (showResult <| Shuffler.PermuteAtLowestHeight.permuteAtLowestHeight ·) fields
-  | "bottomup" :: fields => runOnState runBuildBottomUp fields
+  | "bottomup" :: fields => runOnState (showResult <| buildBottomUp ·) fields
   | "emit" :: fields =>
     runOnState (fun {source target spills} (s : State source target spills) =>
       showResult (Emission.run source target s.planned_mapping spills)) fields

@@ -55,8 +55,8 @@ private def expectedStack (state : State source target spills) : Stack :=
 
 -- These stacks fit within reach, so every valid state must produce the expected stack.
 private def matchesExpected (state : State source target ∅) : Option Bool :=
-  if h : state.Valid then
-    some (match buildBottomUp state h with
+  if state.Valid then
+    some (match buildBottomUp state with
       | .ok result => result.blocked.isNone && decide (result.state.stack = expectedStack state)
       | .error _ => false)
   else none
@@ -96,9 +96,9 @@ private def sample (n extra seed : ℕ) : Option (Bool × Bool) :=
     | some i => source[i]
     | none => sampleValue (nextSeed (seed + j.val))
   let state := initial source target (by simpa [target] using mapping)
-  if h : state.Valid then
+  if state.Valid then
     some (decide (StaticSuccess state),
-      match buildBottomUp state h with
+      match buildBottomUp state with
       | .ok result => result.blocked.isNone
       | .error _ => false)
   else none

@@ -101,39 +101,37 @@ decreasing_by
   · exact Prod.Lex.left _ _ (by omega)
   · exact Prod.Lex.right _ hlt
 
-@[spec] theorem buildBottomUp_frame_triple (state : State source target spills)
-    (hvalid : state.Valid) :
-    ⦃True⦄ buildBottomUp state hvalid
+@[spec] theorem buildBottomUp_frame_triple (state : State source target spills) :
+    ⦃True⦄ buildBottomUp state
     ⦃fun result => result.state.planned_mapping = state.planned_mapping ∧ result.Positive;
       (fun err => ∀ b, err ≠ .Blocked b)⦄ := by
   vcgen [buildBottomUp, requires]
   all_goals simp_all
 
 theorem buildBottomUp_frame (state : State source target spills)
-    (hvalid : state.Valid) {result} (hrun : buildBottomUp state hvalid = .ok result) :
+    {result} (hrun : buildBottomUp state = .ok result) :
     result.state.planned_mapping = state.planned_mapping ∧ result.Positive := by
-  have h := (buildBottomUp_frame_triple state hvalid).le_wp trivial
+  have h := (buildBottomUp_frame_triple state).le_wp trivial
   rw [hrun] at h
   exact h
 
-theorem buildBottomUp_not_error_blocked (state : State source target spills)
-    (hvalid : state.Valid) (blocked : Blocked) :
-    buildBottomUp state hvalid ≠ .error (.Blocked blocked) := by
+theorem buildBottomUp_not_error_blocked (state : State source target spills) (blocked : Blocked) :
+    buildBottomUp state ≠ .error (.Blocked blocked) := by
   intro herror
-  have h := (buildBottomUp_frame_triple state hvalid).le_wp trivial
+  have h := (buildBottomUp_frame_triple state).le_wp trivial
   rw [herror] at h
   exact h blocked rfl
 
 theorem buildBottomUp_ok (initial : State source target spills) (hvalid : initial.Valid) :
-    ∃ result, buildBottomUp initial hvalid = .ok result ∧ result.Positive ∧
+    ∃ result, buildBottomUp initial = .ok result ∧ result.Positive ∧
       result.state.planned_mapping = initial.planned_mapping := by
-  cases hrun : buildBottomUp initial hvalid with
+  cases hrun : buildBottomUp initial with
   | ok result =>
-    obtain ⟨hp, hb⟩ := buildBottomUp_frame initial hvalid hrun
+    obtain ⟨hp, hb⟩ := buildBottomUp_frame initial hrun
     exact ⟨result, rfl, hb, hp⟩
   | error err =>
     cases err with
-    | Blocked b => exact (buildBottomUp_not_error_blocked initial hvalid b hrun).elim
+    | Blocked b => exact (buildBottomUp_not_error_blocked initial b hrun).elim
     | assertion reason => exact (buildBottomUp_no_assertion initial hvalid reason hrun).elim
 
 end Shuffler.Emission

@@ -34,8 +34,8 @@ theorem generate_completed (current : State source target spills) (targetOffset 
   funext result
   by_cases hb : result.blocked.isSome <;> simp [hb, bind, Except.bind] <;> rfl
 
-theorem buildBottomUp_completed (initial : State source target spills) (h : initial.Valid) :
-    ((((buildBottomUp initial h) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
+theorem buildBottomUp_completed (initial : State source target spills) :
+    ((((buildBottomUp initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>
       if h : r.blocked.isSome then throw (.Blocked (r.blocked.get h)) else pure r.state) >>= fun state =>
       pure (⟨state.stack, state.trace⟩ : (stack : Stack) × Trace _ _ stack)) = (do
       let ⟨stack, trace⟩ ← ((((buildBottomUp.loop 0 initial) : Except ShuffleErr (Result _ _ _)) >>= fun (r : Result _ _ _) =>

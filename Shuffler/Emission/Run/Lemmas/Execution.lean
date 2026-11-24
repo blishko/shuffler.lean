@@ -75,9 +75,6 @@ theorem run_spec (source target : Stack) (mapping : Mapping source.length target
         intro j hj
         rw [← boundValue_isSome, hbound, boundValue_isSome]
         exact hlabels j hj
-      rw [requires_of_true _ hsize, except_ok_bind,
-        requires_of_true _ hpending, except_ok_bind, requires_of_true _ havailable, except_ok_bind,
-        requires_of_true _ (by simpa only [Fin.getElem_fin] using hlabels'), except_ok_bind]
       obtain ⟨result, hb, hbpositive, hbplan⟩ :=
         buildBottomUp_ok permuted.state ⟨hsize, hpending, havailable, hlabels'⟩
       exact ⟨result, hb, hbplan.trans (hpplan.trans hrplan), hbpositive⟩

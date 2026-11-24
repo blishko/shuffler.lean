@@ -24,7 +24,7 @@ theorem buildBottomUp_matches_of_ok (initial : State source target spills)
     (h : initial.Valid)
     (hmapped : ∀ i j, initial.mapping i = some j → SlotMatches initial.stack[i] target[j])
     {result : State source target spills}
-    (hrun : buildBottomUp initial h = .ok ⟨none, result⟩) : StackMatches result.stack target := by
+    (hrun : buildBottomUp initial = .ok ⟨none, result⟩) : StackMatches result.stack target := by
   rw [buildBottomUp_expected_of_ok initial h hrun]
   exact expectedStack_matches initial hmapped
 
@@ -32,7 +32,7 @@ theorem buildBottomUp_matches_iff_static (initial : State source target spills)
     (h : initial.Valid)
     (hmapped : ∀ i j, initial.mapping i = some j → SlotMatches initial.stack[i] target[j]) :
     (∃ result : State source target spills,
-      buildBottomUp initial h = .ok ⟨none, result⟩ ∧ StackMatches result.stack target) ↔
+      buildBottomUp initial = .ok ⟨none, result⟩ ∧ StackMatches result.stack target) ↔
       StaticSuccess initial := by
   constructor
   · rintro ⟨result, hrun, _⟩
