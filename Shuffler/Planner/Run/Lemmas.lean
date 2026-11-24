@@ -92,17 +92,6 @@ theorem run_spec (source target : Stack) (spills : SpillSet) (spillingAllowed : 
     (hlabels : target.count .FunctionReturnLabel ≤ source.count .FunctionReturnLabel) :
     ∃ result, run source target spills spillingAllowed strategy = .ok result ∧
       result.state.TargetAvailable ∧ result.state.LabelsUndropped := by
-  have hchecks : (forIn target PUnit.unit fun slot _ => do
-      _ ← requires (slot.is_junk ∨ slot.can_be_freely_generated ∨ slot ∈ source ∨ spills.is_spilled slot)
-        "target slot neither on the stack nor generatable"
-      pure (.yield PUnit.unit) : Except ShuffleErr PUnit) = .ok PUnit.unit := by
-    clear hlabels
-    induction target with
-    | nil => rfl
-    | cons value rest ih =>
-      simp only [List.forIn_cons, requires_of_true _ (havailable value (by simp)),
-        except_ok_bind, pure_bind]
-      exact ih (fun value hv => havailable value (by simp [hv]))
   let initial : State source target := {
     spills, spillingAllowed, dropped := Vector.replicate source.length 0 }
   have hinitial : initial.TargetAvailable := by
@@ -116,10 +105,6 @@ theorem run_spec (source target : Stack) (spills : SpillSet) (spillingAllowed : 
   have hinitialLabels : initial.LabelsUndropped := by
     intro i _
     simp [initial]
-  obtain ⟨result, hresult, hr⟩ := loop_spec source target strategy initial false hinitial hlabels hinitialLabels
-  refine ⟨result, ?_, hr⟩
-  unfold run
-  rw [hchecks, except_ok_bind]
-  exact hresult
+  exact loop_spec source target strategy initial false hinitial hlabels hinitialLabels
 
 end Shuffler.Planner

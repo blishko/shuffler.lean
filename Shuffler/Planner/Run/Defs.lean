@@ -20,10 +20,6 @@ structure Result (source target : Stack) where
 -- See solidity/libyul/backends/evm/ssa/stack/Shuffler.cpp:844-879.
 def run (source target : Stack) (spills : SpillSet) (spillingAllowed : Bool)
     (strategy : BuildMapping.WildcardSlotsStrategy) : Except ShuffleErr (Result source target) := do
-  for slot in target do
-    _ ← requires (slot.is_junk ∨ slot.can_be_freely_generated ∨ slot ∈ source ∨ spills.is_spilled slot)
-      "target slot neither on the stack nor generatable"
-
   loop { spills, spillingAllowed, dropped := Vector.replicate source.length 0 } false
 where
   loop (current : State source target) (sawWildcardCopy : Bool) :

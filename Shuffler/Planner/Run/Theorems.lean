@@ -23,7 +23,7 @@ theorem run_ok (source target : Stack) (spills : SpillSet) (spillingAllowed : Bo
   obtain ⟨result, hr, _⟩ := run_spec source target spills spillingAllowed strategy havailable hlabels
   exact ⟨result, hr⟩
 
--- The target checks and the progress check hold on every attempt.
+-- The progress check holds on every attempt.
 theorem run_no_assertion (source target : Stack) (spills : SpillSet) (spillingAllowed : Bool)
     (strategy : BuildMapping.WildcardSlotsStrategy)
     (havailable : ∀ value ∈ target, value.is_junk ∨ value.can_be_freely_generated ∨

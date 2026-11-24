@@ -10,5 +10,6 @@ public import Shuffler.PermuteAtLowestHeight.Theorems
 public import Shuffler.Emission.Run.Theorems
 public import Shuffler.Resolve.Theorems
 public import Shuffler.Planner.Run.Theorems
+public import Shuffler.Shuffle.Theorems
 
 @[expose] public section

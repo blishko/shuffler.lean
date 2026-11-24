@@ -71,6 +71,15 @@ def Trace.swapCount : Trace spills source result → ℕ
   | .Push _ _ trace => trace.swapCount
   | .Load _ _ trace => trace.swapCount
 
+-- The number of operations.
+def Trace.length : Trace spills source result → ℕ
+  | .Lit _ => 0
+  | .Swap _ _ _ _ trace => trace.length + 1
+  | .Dup _ _ _ _ _ trace => trace.length + 1
+  | .Pop _ trace => trace.length + 1
+  | .Push _ _ trace => trace.length + 1
+  | .Load _ _ trace => trace.length + 1
+
 -- The trace adds values without changing or removing existing positions.
 def Trace.onlyGenerates : Trace spills source result → Prop
   | .Lit _ => True
