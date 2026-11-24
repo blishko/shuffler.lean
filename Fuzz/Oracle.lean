@@ -4,6 +4,7 @@ import Shuffler.PermuteAtLowestHeight.Defs
 import Shuffler.BuildBottomUp.Defs
 import Shuffler.Emission.Run.Defs
 import Shuffler.Planner.Run.Defs
+import Shuffler.Shuffle.Defs
 
 /-
 The Lean side of the differential fuzzer in Fuzz/fuzz.cpp. A case and its result are each one line of
@@ -17,6 +18,7 @@ text, so that both implementations parse the same input and print the same outpu
           | "permute;" stack ";" offsets                       permute, with the destination of each offset
           | "plan;" strategy ";" bit ";" stack ";" stack ";" vars
                                                                Planner.run of spillingAllowed, source, target, spills
+          | "shuffle;" bit ";" stack ";" stack ";" vars        shuffle of spillingAllowed, source, target, spills
   state  := stack ";" stack ";" dests ";" vars                 stack, target, mapping and spilled variables
   dests  := per stack offset a target offset or "-"
   slot   := "v" n | "l" n | "_" | "R"                          Var, Lit, Wildcard, FunctionReturnLabel
@@ -27,6 +29,9 @@ text, so that both implementations parse the same input and print the same outpu
           | "ok " bit ";" bit ";" vars ";" bytes [";" stack ";" ops ";" sources]
                                                                Planner.run: success, sawWildcardCopy, spills, dropped,
                                                                and on success the emitted stack and the plan
+          | "ok " bit [";" vars ";" stack ";" ops ";" sources]
+                                                               shuffle: admissible, and if admissible the spills,
+                                                               the emitted stack and the plan
           | "err"
   status := "ok" | "blocked " offset " " excess
   op     := "SWAP" n | "DUP" n | "POP" | "PUSH:" slot | "LOAD:" slot
@@ -166,32 +171,54 @@ def runPermute : List String → Except String String
     else .error s!"not a permutation: {dests}"
   | _ => .error "not a permute case"
 
+def parseBit : String → Except String Bool
+  | "0" => .ok false
+  | "1" => .ok true
+  | s => .error s!"not a bit: {s}"
+
+-- The variables of the case in `spills`, ascending. The planner only spills source values, so every spilled id is
+-- in the case.
+def spilledVars (source target : Stack) (inputSpills : List ℕ) (spills : SpillSet) : String :=
+  let ids := (source ++ target).filterMap (fun | .Var id => some id.val | _ => none) ++ inputSpills
+  " ".intercalate (((ids.dedup.mergeSort (· ≤ ·)).filter (VarId.mk · ∈ spills)).map toString)
+
+-- The emitted stack, its trace and the plan.
+def showPlan (s : State source target spills) : String :=
+  let sources := (List.finRange target.length).map fun j => showOffset (s.planned_mapping.symm j)
+  s!"{showStack s.stack};{" ".intercalate (ops s.trace)};{" ".intercalate sources}"
+
 def runPlanner : List String → Except String String
   | [strategy, allowed, source, target, vars] => do
     let source ← parseStack source
     let target ← parseStack target
     let inputSpills ← (words vars).mapM parseNat
-    let allowed ← match allowed with
-      | "0" => pure false
-      | "1" => pure true
-      | s => throw s!"not a bit: {s}"
-    let result := Planner.run source target ((inputSpills.map VarId.mk).toFinset) allowed
+    let result := Planner.run source target ((inputSpills.map VarId.mk).toFinset) (← parseBit allowed)
       (← parseStrategy strategy)
     return match result with
       | .ok r =>
-        -- the planner only spills source values, so every spilled id is in the case
-        let ids := (source ++ target).filterMap (fun | .Var id => some id.val | _ => none) ++ inputSpills
-        let spilled := (ids.dedup.mergeSort (· ≤ ·)).filter (VarId.mk · ∈ r.state.spills)
         let dropped := r.state.dropped.toList.map (toString ·.val)
         let head := s!"ok {showBit r.result.isSome};{showBit r.sawWildcardCopy};" ++
-          s!"{" ".intercalate (spilled.map toString)};{" ".intercalate dropped}"
+          s!"{spilledVars source target inputSpills r.state.spills};{" ".intercalate dropped}"
         match r.result with
         | none => head
-        | some s =>
-          let sources := (List.finRange target.length).map fun j => showOffset (s.planned_mapping.symm j)
-          s!"{head};{showStack s.stack};{" ".intercalate (ops s.trace)};{" ".intercalate sources}"
+        | some s => s!"{head};{showPlan s}"
       | .error _ => "err"
   | _ => .error "not a planner case"
+
+-- What stack::shuffle leaves: nothing when not admissible, else the spills, the emitted stack and the plan.
+def runShuffle : List String → Except String String
+  | [allowed, source, target, vars] => do
+    let source ← parseStack source
+    let target ← parseStack target
+    let inputSpills ← (words vars).mapM parseNat
+    let result := shuffle source target ((inputSpills.map VarId.mk).toFinset) (← parseBit allowed)
+    return match result with
+      | .ok r =>
+        match r.result with
+        | none => "ok 0"
+        | some s => s!"ok 1;{spilledVars source target inputSpills r.state.spills};{showPlan s}"
+      | .error _ => "err"
+  | _ => .error "not a shuffle case"
 
 def run (line : String) : Except String String :=
   match line.splitOn ";" with
@@ -205,6 +232,7 @@ def run (line : String) : Except String String :=
       showResult (Emission.run source target s.planned_mapping spills)) fields
   | "permute" :: fields => runPermute fields
   | "plan" :: fields => runPlanner fields
+  | "shuffle" :: fields => runShuffle fields
   | _ => .error s!"not a case: {line}"
 
 end Oracle

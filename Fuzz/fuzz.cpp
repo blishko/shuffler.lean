@@ -1,5 +1,5 @@
 // Differential fuzzer for buildMapping, removeSurplus, permute, permuteAtLowestHeight, buildBottomUp,
-// Emission.run and Planner.run: decodes each fuzzer input into one case, runs the C++ shuffler and the
+// Emission.run, Planner.run and shuffle: decodes each fuzzer input into one case, runs the C++ shuffler and the
 // Lean model (through the Lean C FFI) on it, and on the first difference prints "case <tab> c++ <tab> lean"
 // to stderr and aborts. The case and result format is documented in Fuzz/Oracle.lean.
 //
@@ -319,6 +319,22 @@ std::string runPlanner(Slots& _slots, std::vector<std::string> const& _fields)
 		";" + join(sources);
 }
 
+/// The status and, when admissible, the spills and the source stack that stack::shuffle leaves, its trace and plan
+std::string runShuffle(Slots& _slots, std::vector<std::string> const& _fields)
+{
+	StackData source = _slots.parseStack(_fields.at(2));
+	StackData const target = _slots.parseStack(_fields.at(3));
+	spill::SpillSet spills = parseSpills(_slots, _fields.at(4));
+	ShuffleResult const result = stack::shuffle(source, target, spills, _fields.at(1) == "1", maxSwapDepth);
+	if (result.status == ShuffleResult::Status::StackTooDeep)
+		return "ok 0";
+	std::vector<std::string> sources;
+	for (std::optional<StackOffset> const& sourceOffset: result.sourceOf)
+		sources.push_back(showOffset(sourceOffset));
+	return "ok 1;" + join(_slots.spilledVars(spills)) + ";" + _slots.showStack(source) + ";" +
+		_slots.showTrace(result.trace) + ";" + join(sources);
+}
+
 std::string runCpp(Slots& _slots, std::string const& _line)
 {
 	std::vector<std::string> const fields = split(_line, ';');
@@ -333,6 +349,8 @@ std::string runCpp(Slots& _slots, std::string const& _line)
 			return runPermute(_slots, fields);
 		if (kind == "plan" && fields.size() == 6)
 			return runPlanner(_slots, fields);
+		if (kind == "shuffle" && fields.size() == 5)
+			return runShuffle(_slots, fields);
 	}
 	catch (yul::YulAssertion const&)
 	{
@@ -435,8 +453,9 @@ std::string mapCase(Input& _in)
 	return "map;" + strategy(_in) + ";" + join(source) + ";" + join(target) + ";" + join(dropped);
 }
 
-/// Most target variables that are not on the source stack are spilled, so that most plans can start
-std::string planCase(Input& _in)
+/// The spilling permission, source, target and spills of a plan. Most target variables that are not on the source
+/// stack are spilled, so that most plans can start
+std::string planFields(Input& _in)
 {
 	std::size_t const numVars = varCount(_in);
 	std::vector<std::string> const source = slots(_in, stackSize(_in), numVars);
@@ -451,8 +470,19 @@ std::string planCase(Input& _in)
 	for (std::size_t v = 0; v < numVars; ++v)
 		if (spilled[v])
 			vars.push_back(std::to_string(v));
-	return "plan;" + strategy(_in) + ";" + (_in.chance(2) ? "1" : "0") + ";" + join(source) + ";" + join(target) + ";" +
-		join(vars);
+	std::string const spillingAllowed = _in.chance(2) ? "1" : "0";
+	return spillingAllowed + ";" + join(source) + ";" + join(target) + ";" + join(vars);
+}
+
+std::string planCase(Input& _in)
+{
+	std::string const fields = planFields(_in);
+	return "plan;" + strategy(_in) + ";" + fields;
+}
+
+std::string shuffleCase(Input& _in)
+{
+	return "shuffle;" + planFields(_in);
 }
 
 /// A stack, target, mapping and spill set. For "surplus" and "emit" some slots have no destination. For
@@ -522,7 +552,7 @@ std::string permuteCase(Input& _in)
 
 std::string makeCase(Input& _in)
 {
-	switch (_in.pick(0, 6))
+	switch (_in.pick(0, 7))
 	{
 	case 0: return mapCase(_in);
 	case 1: return stateCase(_in, "surplus");
@@ -530,6 +560,7 @@ std::string makeCase(Input& _in)
 	case 3: return stateCase(_in, "lowest");
 	case 4: return stateCase(_in, "emit");
 	case 5: return planCase(_in);
+	case 6: return shuffleCase(_in);
 	default: return stateCase(_in, "bottomup");
 	}
 }

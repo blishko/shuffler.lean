@@ -13,10 +13,10 @@ Run `lake test` to run the property tests.
 ## Differential fuzzing
 
 `Fuzz/fuzz.cpp` is a fuzz target that runs `buildMapping`, `removeSurplus`, `permute`,
-`permuteAtLowestHeight`, `buildBottomUp`, `Emission.run` and `Planner.run` of the C++ shuffler from
+`permuteAtLowestHeight`, `buildBottomUp`, `Emission.run`, `Planner.run` and `shuffle` of the C++ shuffler from
 the `solidity` submodule and of the Lean model on the same case, and aborts when the results differ.
 It calls the Lean model through the Lean C FFI. Every input decodes to a case. Except for
-`Planner.run`, every case satisfies the preconditions of the function under test. A `Planner.run`
+`Planner.run` and `shuffle`, every case satisfies the preconditions of the function under test. Such a
 case can have a target variable that is not on the source stack and not spilled, or more function
 return labels in the target than in the source. For these cases the results must also be the same.
 The case language is described in `Fuzz/Oracle.lean`.
